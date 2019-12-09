@@ -4,6 +4,7 @@ Script en python para la compresión de un archivo generando N partes.
 
 # USO
 
+```
 Uso del comando super_zlib:
     super_zlib in_file out_path [otps]
 
@@ -15,6 +16,7 @@ Opciones:
     -p, --parts Número de archivos a generar.
     -l, --level Nivel de compreción (de 0 a 9).
     -b, --bs    Número de bytes a procesar por lectura.
+```
 
 
 # Ejemplo.
