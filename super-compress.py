@@ -25,23 +25,25 @@ import getopt
 import os
 import sys
 import zlib
+import subprocess
+from mpi4py import MPI
 
 
 class SuperCompressAbs(object):
     """
     implementación Abstracta de interfaz de compreción.
     """
-    
+
     options = ''
     """
-    Opciones extras en formato corto de getopt. 
+    Opciones extras en formato corto de getopt.
     """
-    
+
     long_options = []
     """
     Lista de opciones extras en formato largo de getopt.
     """
-    
+
     def __init__(self, in_file, out_path, **kwargs):
         self._in_file = in_file
         self._out_path = out_path
@@ -51,35 +53,35 @@ class SuperCompressAbs(object):
         self._file_o = {}
         self._in_file_size = os.path.getsize(self._in_file)
         self._size_of_part = int(self.in_file_size / self.parts)
-        
+
     @property
     def in_file(self):
         return self._in_file
-    
+
     @property
     def bytes_pre_read(self):
         return self._bty
-    
+
     @property
     def in_file_size(self):
         return self._in_file_size
-    
+
     @property
     def out_path(self):
         return self._out_path
-    
+
     @property
     def parts(self):
         return self._parts
-    
+
     @property
     def size_of_part(self):
         return self._size_of_part
-    
+
     def open_in_file(self, part):
         """
         Apertura del archivo en una parte espesifica.
-        
+
         :params part: Número de parte de archivo.
         """
         if part in self._file_hs and self._file_hs[part] is not None:
@@ -88,23 +90,23 @@ class SuperCompressAbs(object):
         offset = self.size_of_part * (part - 1)
         fileh.seek(offset)
         self._file_hs[part] = fileh
-    
+
     def close_in_file(self, part):
         """
         Cierre del archivo en una parte espesifica.
-        
+
         :params part: Número de parte de archivo.
         """
         self._file_hs[part].close()
         self._file_hs[part] = None
-    
+
     def read_in_file(self, part, byt):
         """
         Lectura de una parte del archivo.
-        
+
         :params part: Número de parte de archivo.
         :params byt: Cantidad máxima de bytes a leer.
-        
+
         :returns: bytes leidos de la parte del archivo.
         """
         return self._file_hs[part].read(byt)
@@ -112,7 +114,7 @@ class SuperCompressAbs(object):
     def open_out_file(self, part):
         """
         Apertura de escritura de una parte.
-        
+
         :params part: Número de parte.
         """
         if part in self._file_o and self._file_o[part] is not None:
@@ -123,11 +125,11 @@ class SuperCompressAbs(object):
         path = os.path.join(os.path.abspath(self.out_path), str(part))
         fileh = open(path, 'wb')
         self._file_o[part] = fileh
-    
+
     def close_out_file(self, part):
         """
         Cierre de escritura de una parte.
-        
+
         :params part: Número de parte.
         """
         self._file_o[part].close()
@@ -136,7 +138,7 @@ class SuperCompressAbs(object):
     def write_out_file(self,part, data):
         """
         Escritura de una parte.
-        
+
         :params part: Número de parte.
         :params data: Datos a escribir.
         """
@@ -153,7 +155,7 @@ class SuperCompressObjCompressor(SuperCompressAbs):
     """
     Implementación que hace uso de objetos compresores.
     """
-    
+
     options = 'l:'
     long_options = ["level="]
     compressor_class = None
@@ -164,7 +166,7 @@ class SuperCompressObjCompressor(SuperCompressAbs):
     """
     Nivel por defecto de compresión
     """
-    
+
     def __init__(self, in_file, out_path, **kwargs):
         self._level = int(kwargs.get('-l', kwargs.get('--level',
                                                       self.default_lavel)))
@@ -176,7 +178,7 @@ class SuperCompressObjCompressor(SuperCompressAbs):
     @property
     def level(self):
         return self._level
-    
+
     def make_compressor(self):
         """
         Generación de un objeto compresor.
@@ -184,12 +186,12 @@ class SuperCompressObjCompressor(SuperCompressAbs):
         if self.compressor_class is None:
             raise Excpetion("Es requerida la definición de compressor_class")
         return self.compressor_class(self.level)
-    
+
     def run(self):
         for c_part in range(self.parts):
             self._compress_part(c_part + 1)
         return 0
-    
+
     def _compress_part(self, part):
         """
         Para comprimir cada parte.
@@ -202,7 +204,7 @@ class SuperCompressObjCompressor(SuperCompressAbs):
         while bty_count < self.size_of_part:
             byt_req = self.bytes_pre_read
             if not is_last_part and bty_count + byt_req >= self.size_of_part:
-                byt_req = self.size_of_part - bty_count                
+                byt_req = self.size_of_part - bty_count
             part_data = self.read_in_file(part, byt_req)
             data_size = len(part_data)
             bty_count += data_size
@@ -218,16 +220,16 @@ class SuperCompressZlib(SuperCompressObjCompressor):
     """
     Imprementación que usa zlib
     """
-    
+
     compressor_class = zlib.compressobj
     default_lavel = '6'
-    
+
 
 class SuperCompressBz2(SuperCompressObjCompressor):
     """
     Imprementación que usa bz2
     """
-    
+
     compressor_class = bz2.BZ2Compressor
     default_lavel = '9'
 
@@ -236,7 +238,7 @@ class SuperCompress:
     """
     Implementación de metodos de control del programa principal
     """
-    
+
     _cls_progrmas = {
         'super_zlib': SuperCompressZlib,
         'super_bz2': SuperCompressBz2
@@ -244,7 +246,7 @@ class SuperCompress:
     """
     Mapeo de implementaciones.
     """
-    
+
     @classmethod
     def create(cls, *args):
         """
@@ -260,7 +262,7 @@ class SuperCompress:
             return 10
         in_file = args_list.pop(0)
         out_path = args_list.pop(0)
-        
+
         try:
             cls_program = cls.get_cls_program(program_name)
             cls.verify_in_file(in_file)
@@ -269,8 +271,8 @@ class SuperCompress:
             return 11
 
         return cls.run(cls_program, in_file, out_path, args_list)
-    
-    @classmethod  
+
+    @classmethod
     def get_cls_program(cls, program_name):
         """
         Obtine la implementación corecpondiente al mapeo.
@@ -278,8 +280,8 @@ class SuperCompress:
         if program_name not in cls._cls_progrmas:
             raise Exception('Programa %s no implementado' % program_name)
         return cls._cls_progrmas[program_name]
-    
-    @classmethod  
+
+    @classmethod
     def usage(cls, name):
         """
         """
@@ -296,16 +298,16 @@ class SuperCompress:
         print("    -l, --level Nivel de compreción.")
         print("    -b, --bs    Número de bytes a procesar por lectura.")
         print("")
-        
-        
-    @classmethod  
+
+
+    @classmethod
     def verify_in_file(cls, in_file):
         """
         Verificación de existencia de archiv de entrada
         """
         assert os.path.isfile(in_file) and os.access(in_file, os.R_OK), \
             "Archivo %s no existe o no se puede leer" % in_file
-        
+
     @classmethod
     def run(cls, cls_program, in_file, out_path, args_list):
         """
@@ -323,9 +325,8 @@ class SuperCompress:
         except Exception as exce:
             print('Error de programa: %s' % exce)
             return 12
-        
+
 
 if __name__ == '__main__':
     args = sys.argv
     sys.exit(SuperCompress.create(*args))
-    
