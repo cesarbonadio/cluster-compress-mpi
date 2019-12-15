@@ -29,6 +29,30 @@ import subprocess
 from mpi4py import MPI
 
 
+def wccount(filename):
+    out = subprocess.Popen(['wc', '-l', filename],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT
+                         ).communicate()[0]
+    return int(out.partition(b' ')[0])
+
+
+def workload(file_path, rank, n_procs):
+    '''
+        Separar la carga de trabajo
+    '''
+    print("calculando el trabajo para {0}".format(rank))
+    amount_of_lines = wccount(file_path)
+    lines_per_process = amount_of_lines / n_procs
+    from_line = rank * lines_per_process
+    to_line = from_line + lines_per_process
+    remainder = amount_of_lines % n_procs
+    print ("Se ha calculado el trabajo para ({0})\n \
+            desde: {1}, hasta: {2}, con un resto de {3}" \
+            .format(rank,from_line,to_line,remainder))
+    return [from_line, to_line, remainder]
+
+
 class SuperCompressAbs(object):
     """
     implementación Abstracta de interfaz de compreción.
@@ -188,8 +212,26 @@ class SuperCompressObjCompressor(SuperCompressAbs):
         return self.compressor_class(self.level)
 
     def run(self):
+        comm = MPI.COMM_WORLD
+        req = MPI.Request
+        n_procs = comm.Get_size()
+        my_rank = comm.Get_rank()
+
+        #from_line, to_line, remainder = workload(self.in_file,my_rank,n_procs)
+
+        #print(self.parts)
+        #print(my_rank)
+
+        if my_rank + 1  > self.parts:
+            return 0
+
         for c_part in range(self.parts):
-            self._compress_part(c_part + 1)
+            part = c_part
+            while part > n_procs - 1:
+                part = part - n_procs
+            if my_rank == part:
+                print(my_rank,part)
+                self._compress_part(c_part + 1)
         return 0
 
     def _compress_part(self, part):
@@ -253,6 +295,7 @@ class SuperCompress:
         Entrada principal
         """
         args_list = list(args)
+        #print('lista de argumentos: {0}'.format(args_list[0]))
         program_name = os.path.basename(args_list.pop(0))
         if '-h' in args_list or '--help' in args_list:
             cls.usage(program_name)
