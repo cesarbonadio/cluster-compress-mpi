@@ -29,30 +29,6 @@ import subprocess
 from mpi4py import MPI
 
 
-def wccount(filename):
-    out = subprocess.Popen(['wc', '-l', filename],
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT
-                         ).communicate()[0]
-    return int(out.partition(b' ')[0])
-
-
-def workload(file_path, rank, n_procs):
-    '''
-        Separar la carga de trabajo
-    '''
-    print("calculando el trabajo para {0}".format(rank))
-    amount_of_lines = wccount(file_path)
-    lines_per_process = amount_of_lines / n_procs
-    from_line = rank * lines_per_process
-    to_line = from_line + lines_per_process
-    remainder = amount_of_lines % n_procs
-    print ("Se ha calculado el trabajo para ({0})\n \
-            desde: {1}, hasta: {2}, con un resto de {3}" \
-            .format(rank,from_line,to_line,remainder))
-    return [from_line, to_line, remainder]
-
-
 class SuperCompressAbs(object):
     """
     implementación Abstracta de interfaz de compreción.
@@ -145,7 +121,10 @@ class SuperCompressAbs(object):
             return
         base_path = os.path.abspath(self.out_path)
         if not os.path.exists(base_path):
-            os.mkdir(base_path)
+            try:
+                os.mkdir(base_path)
+            except:
+                pass
         path = os.path.join(os.path.abspath(self.out_path), str(part))
         fileh = open(path, 'wb')
         self._file_o[part] = fileh
@@ -216,11 +195,6 @@ class SuperCompressObjCompressor(SuperCompressAbs):
         req = MPI.Request
         n_procs = comm.Get_size()
         my_rank = comm.Get_rank()
-
-        #from_line, to_line, remainder = workload(self.in_file,my_rank,n_procs)
-
-        #print(self.parts)
-        #print(my_rank)
 
         if my_rank + 1  > self.parts:
             return 0
@@ -366,8 +340,10 @@ class SuperCompress:
             program = cls_program(in_file, out_path, **kwargs)
             return program.run()
         except Exception as exce:
-            print('Error de programa: %s' % exce)
-            return 12
+            pass
+	    #print('Error de programa: %s' % exce)
+            #return 12
+		
 
 
 if __name__ == '__main__':
