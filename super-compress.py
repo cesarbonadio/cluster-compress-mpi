@@ -31,7 +31,7 @@ from mpi4py import MPI
 
 class SuperCompressAbs(object):
     """
-    implementación Abstracta de interfaz de compreción.
+    implementación Abstracta de interfaz de compresión.
     """
 
     options = ''
@@ -80,9 +80,9 @@ class SuperCompressAbs(object):
 
     def open_in_file(self, part):
         """
-        Apertura del archivo en una parte espesifica.
+        Apertura del archivo en una parte específica.
 
-        :params part: Número de parte de archivo.
+        :params part: Número de partes.
         """
         if part in self._file_hs and self._file_hs[part] is not None:
             return
@@ -93,7 +93,7 @@ class SuperCompressAbs(object):
 
     def close_in_file(self, part):
         """
-        Cierre del archivo en una parte espesifica.
+        Cierre del archivo en una parte específica.
 
         :params part: Número de parte de archivo.
         """
@@ -151,7 +151,7 @@ class SuperCompressAbs(object):
         """
         implementación del compresor
         """
-        raise Exception("Requerida la implementación de este Methodo.")
+        raise Exception("Requerida la implementación de este Método.")
 
 
 class SuperCompressObjCompressor(SuperCompressAbs):
@@ -163,7 +163,7 @@ class SuperCompressObjCompressor(SuperCompressAbs):
     long_options = ["level="]
     compressor_class = None
     """
-    Clase o funsión que genera el objeto compresor
+    Clase o función que genera el objeto compresor
     """
     default_lavel = None
     """
@@ -292,7 +292,7 @@ class SuperCompress:
     @classmethod
     def get_cls_program(cls, program_name):
         """
-        Obtine la implementación corecpondiente al mapeo.
+        Obtiene la implementación correspondiente al mapeo.
         """
         if program_name not in cls._cls_progrmas:
             raise Exception('Programa %s no implementado' % program_name)

@@ -34,12 +34,6 @@ $ md5sum /tmp/ejemplo_file
 cfc3e98d0d8a5f4d2bb21bf33292d83f  /tmp/ejemplo_file
 ```
 
-Si no has descargado el srcipt:
-
-```
-$ git clone https://gitlab.com/rodriguezrjrr/dist-super-compress.git
-$ cd dist-super-compress
-```
 
 Compresión  usando zlib en 2 partes:
 
@@ -49,7 +43,7 @@ $ ls /tmp/ejemplo_zlib
 1 2
 ```
 
-Para comprovar:
+Para comprobar:
 
 ```
 $ for num in {1..2}; do pigz -d -c /tmp/ejemplo_zlib/$num; done | md5sum -
@@ -74,7 +68,7 @@ Compresión  usando bz2 en 2 partes:
 $ ./super_bz2 /tmp/ejemplo_file /tmp/ejemplo_bz2
 ```
 
-Para comprovar:
+Para comprobar:
 
 ```
 $ for num in {1..2}; do bzip2 -d -c /tmp/ejemplo_bz2/$num; done | md5sum -
